@@ -1,4 +1,10 @@
-Nice—let’s spin Gemma back up on your 4090 and kick the autotuner.
+This document outlines the process of tuning a multi-GPU setup for the Gemma-300M embedding model. The tests were conducted on a 4 x RTX 4090 machine rented from vast.ai.
+
+**Test Environment:**
+- **Provider**: vast.ai
+- **Instance ID**: 27295665
+- **Host**: 80960
+- **Machine ID**: 18032
 
 ## 0) One-time checklist
 
@@ -217,3 +223,17 @@ The following results were achieved using the corrected `autotune_embed.py` scri
 | 4    | 69,912                  | 89.78s     | 2.87x          |
 
 The optimal configuration for the four-GPU setup was found to be `BATCH=32` and `CONC=128`.
+
+---
+
+### 🧠 4-GPU Performance Estimates
+
+| Target corpus    | Assumed avg tokens/tweet        | Approx runtime |
+| ---------------- | ------------------------------- | -------------- |
+| **400 M tweets** | 15 tok (avg tweet)              | ~ 23.8 h       |
+|                  | 20 tok                          | ~ 31.7 h       |
+|                  | 25 tok                          | ~ 39.7 h       |
+|                  | 30 tok                          | ~ 47.6 h       |
+|                  | 40 tok                          | ~ 63.5 h       |
+|                  | 50 tok                          | ~ 79.4 h       |
+|                  | 64 tok (your synthetic doc len) | ~ 101.6 h      |
