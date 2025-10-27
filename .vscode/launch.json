@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Embed Tweets",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/embed_tweets.py",
+            "args": [
+                "--collection",
+                "tweets",
+                "--tei-urls",
+                "http://localhost:18080/embed,http://localhost:18081/embed,http://localhost:18082/embed,http://localhost:18083/embed",
+                "--batch-size",
+                "32",
+                "--concurrency",
+                "192"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
