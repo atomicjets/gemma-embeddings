@@ -2,9 +2,9 @@ This document outlines the process of tuning a multi-GPU setup for the Gemma-300
 
 **Test Environment:**
 - **Provider**: vast.ai
-- **Instance ID**: 27295665
-- **Host**: 80960
-- **Machine ID**: 18032
+- **Instance ID**: 27329038
+- **Host**: 86293
+- **Machine ID**: 13804
 
 ## 0) One-time checklist
 
@@ -212,31 +212,41 @@ Next steps:
 
 ---
 
-### 🚀 Multi-GPU Scaling Results
+### 🚀 Multi-GPU Scaling Results (4x 4090)
 
-The following results were achieved using the corrected `autotune_embed.py` script with client-side round-robin load balancing.
+The following results were achieved using the `autotune_embed.py` script. The 1-GPU and 2-GPU results are included for scaling reference.
 
 | GPUs | Throughput (tokens/sec) | Total Time | Scaling Factor |
 | :--- | :--- | :--- | :--- |
 | 1    | 24,375                  | 171.63s    | 1.00x          |
 | 2    | 36,076                  | 121.21s    | 1.48x          |
-| 4    | 69,912                  | 89.78s     | 2.87x          |
 
-The optimal configuration for the four-GPU setup was found to be `BATCH=32` and `CONC=128`.
+#### 4-GPU Detailed Trials (BATCH=32)
+
+| Concurrency | Docs/s | Tok/s  | p50 (s) | p95 (s) | Errors | Total Time (s) |
+|-------------|--------|--------|---------|---------|--------|----------------|
+| 128         | 174    | 72,711 | 21.91   | 25.29   | 0      | 88.39          |
+| 192         | 186    | 76,873 | 31.69   | 35.71   | 0      | 107.70         |
+| 256         | 178    | 73,633 | 42.94   | 47.27   | 0      | 112.20         |
+| 384         | 188    | 78,018 | 59.13   | 60.85   | 201    | 106.36         |
+
+The optimal configuration for the four-GPU setup was found to be `BATCH=32` and `CONC=192`, achieving **~77k tokens/sec** with zero errors. This represents a scaling factor of **3.15x** over a single GPU.
 
 ---
 
 ### 🧠 4-GPU Performance Estimates
 
+Based on the top stable throughput of **76,873 tokens/sec**.
+
 | Target corpus    | Assumed avg tokens/tweet        | Approx runtime |
 | ---------------- | ------------------------------- | -------------- |
-| **400 M tweets** | 15 tok (avg tweet)              | ~ 23.8 h       |
-|                  | 20 tok                          | ~ 31.7 h       |
-|                  | 25 tok                          | ~ 39.7 h       |
-|                  | 30 tok                          | ~ 47.6 h       |
-|                  | 40 tok                          | ~ 63.5 h       |
-|                  | 50 tok                          | ~ 79.4 h       |
-|                  | 64 tok (your synthetic doc len) | ~ 101.6 h      |
+| **400 M tweets** | 15 tok (avg tweet)              | ~ 21.7 h       |
+|                  | 20 tok                          | ~ 28.9 h       |
+|                  | 25 tok                          | ~ 36.1 h       |
+|                  | 30 tok                          | ~ 43.4 h       |
+|                  | 40 tok                          | ~ 57.8 h       |
+|                  | 50 tok                          | ~ 72.3 h       |
+|                  | 64 tok (your synthetic doc len) | ~ 92.5 h       |
 
 ---
 
@@ -266,10 +276,10 @@ The following results were achieved using the `autotune_cloudflare.py` script to
 
 | Metric                  | 4 x RTX 4090 (Self-Hosted)                               | Cloudflare Workers AI                                    | Analysis                                                                                                                               |
 | ----------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Throughput**          | ~70,000 tokens/sec                                       | ~28,000 tokens/sec (sustainable rate)                    | The self-hosted setup is approximately **2.5 times faster** for pure batch processing.                                                 |
-| **Est. Time (400M tweets)** | **~2.3 days**                                            | **~5.8 days**                                            | If speed is the primary concern for this one-off job, the dedicated GPUs are the clear winner.                                         |
-| **Est. Cost (400M tweets)** | **~$62** (at $800/month rental)                          | **~$229**                                                | The self-hosted option is significantly cheaper for this large batch job.                                                              |
-| **Latency (p95)**       | > 50 seconds (in high-throughput mode)                   | **1.43 seconds**                                         | Cloudflare has vastly superior latency, making it the only viable choice for any real-time or interactive application needs.          |
+| **Throughput**          | **~77,000 tokens/sec**                                   | ~28,000 tokens/sec (sustainable rate)                    | The self-hosted setup is approximately **2.75 times faster** for pure batch processing.                                                |
+| **Est. Time (400M tweets)** | **~2.1 days**                                            | **~5.8 days**                                            | If speed is the primary concern for this one-off job, the dedicated GPUs are the clear winner.                                         |
+| **Est. Cost (400M tweets)** | **~$56** (at $800/month rental)                          | **~$229**                                                | The self-hosted option is significantly cheaper for this large batch job.                                                              |
+| **Latency (p95)**       | > 35 seconds (in high-throughput mode)                   | **1.43 seconds**                                         | Cloudflare has vastly superior latency, making it the only viable choice for any real-time or interactive application needs.          |
 | **Setup & Maintenance** | **High** (Requires renting, setup, monitoring, teardown) | **None** (Serverless)                                    | Cloudflare offers a "set it and forget it" approach, which carries significant value by reducing operational overhead.               |
 
 **Conclusion:** For the one-time 400 million tweet embedding job, the **4 x RTX 4090 self-hosted setup is the superior choice**. It is both significantly faster and cheaper. Cloudflare's main advantages are its serverless convenience and low latency, which would make it the better option for ongoing, real-time applications rather than large, offline batch processing.
