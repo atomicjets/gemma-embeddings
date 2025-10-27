@@ -237,3 +237,63 @@ The optimal configuration for the four-GPU setup was found to be `BATCH=32` and 
 |                  | 40 tok                          | ~ 63.5 h       |
 |                  | 50 tok                          | ~ 79.4 h       |
 |                  | 64 tok (your synthetic doc len) | ~ 101.6 h      |
+
+---
+
+### ☁️ Cloudflare Workers AI Load Test Results
+
+The following results were achieved using the `autotune_cloudflare.py` script to load test the Cloudflare Workers AI embedding service with the `google/embeddinggemma-300m` model.
+
+| Parameter         | Value                                  | Notes                                                                                                                                  |
+| ----------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Batch size**    | **16**                                 | A smaller batch size was found to be more stable and performant, avoiding timeouts and rate limiting.                                  |
+| **Concurrency**   | **64**                                 | This level of concurrency provided the best throughput without overwhelming the service.                                               |
+| **Throughput**    | **≈ 306 k tokens/s**                   | The best sustainable throughput achieved with zero errors.                                                                             |
+| **Latency (p50 / p95)** | **0.83 s / 1.43 s**                | Significantly lower latency compared to the self-hosted setup, making it suitable for real-time or near-real-time applications.      |
+| **Errors**        | 0                                      | The optimal configuration ran without any errors.                                                                                      |
+
+---
+
+### 🧠 Cloudflare Performance Estimates
+
+| Target corpus    | Assumed avg tokens/tweet | Approx runtime | Estimated Cost |
+| ---------------- | ------------------------ | -------------- | -------------- |
+| **400 M tweets** | 35 tok (avg tweet)       | ~5.8 days      | ~$229          |
+
+---
+
+### 📊 Head-to-Head Comparison: 4x4090 vs. Cloudflare
+
+| Metric                  | 4 x RTX 4090 (Self-Hosted)                               | Cloudflare Workers AI                                    | Analysis                                                                                                                               |
+| ----------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Throughput**          | ~70,000 tokens/sec                                       | ~28,000 tokens/sec (sustainable rate)                    | The self-hosted setup is approximately **2.5 times faster** for pure batch processing.                                                 |
+| **Est. Time (400M tweets)** | **~2.3 days**                                            | **~5.8 days**                                            | If speed is the primary concern for this one-off job, the dedicated GPUs are the clear winner.                                         |
+| **Est. Cost (400M tweets)** | **~$62** (at $800/month rental)                          | **~$229**                                                | The self-hosted option is significantly cheaper for this large batch job.                                                              |
+| **Latency (p95)**       | > 50 seconds (in high-throughput mode)                   | **1.43 seconds**                                         | Cloudflare has vastly superior latency, making it the only viable choice for any real-time or interactive application needs.          |
+| **Setup & Maintenance** | **High** (Requires renting, setup, monitoring, teardown) | **None** (Serverless)                                    | Cloudflare offers a "set it and forget it" approach, which carries significant value by reducing operational overhead.               |
+
+**Conclusion:** For the one-time 400 million tweet embedding job, the **4 x RTX 4090 self-hosted setup is the superior choice**. It is both significantly faster and cheaper. Cloudflare's main advantages are its serverless convenience and low latency, which would make it the better option for ongoing, real-time applications rather than large, offline batch processing.
+
+---
+
+### ☁️ Cloudflare Workers AI Load Test Results
+
+The following results were achieved using the `autotune_cloudflare.py` script to load test the Cloudflare Workers AI embedding service with the `google/embeddinggemma-300m` model.
+
+| Parameter         | Value                                  | Notes                                                                                                                                  |
+| ----------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Batch size**    | **16**                                 | A smaller batch size was found to be more stable and performant, avoiding timeouts and rate limiting.                                  |
+| **Concurrency**   | **64**                                 | This level of concurrency provided the best throughput without overwhelming the service.                                               |
+| **Throughput**    | **≈ 306 k tokens/s**                   | The best sustainable throughput achieved with zero errors.                                                                             |
+| **Latency (p50 / p95)** | **0.83 s / 1.43 s**                | Significantly lower latency compared to the self-hosted setup, making it suitable for real-time or near-real-time applications.      |
+| **Errors**        | 0                                      | The optimal configuration ran without any errors.                                                                                      |
+
+---
+
+### 🧠 Cloudflare Performance Estimates
+
+| Target corpus    | Assumed avg tokens/tweet | Approx runtime | Estimated Cost |
+| ---------------- | ------------------------ | -------------- | -------------- |
+| **400 M tweets** | 35 tok (avg tweet)       | ~5.8 days      | ~$229          |
+
+**Conclusion:** Cloudflare Workers AI is a highly viable and cost-effective solution for the 400 million tweet embedding job. While the total processing time is longer than the 4-GPU setup, the cost is significantly lower, and it eliminates the need for managing infrastructure.
