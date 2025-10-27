@@ -30,7 +30,8 @@ def clean_tweet_text(text):
     text = text.replace('@', '').replace('#', '')
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
-    return text
+    # Truncate to a safe length
+    return text[:1000]
 
 # --- Main Embedding Logic ---
 def process_embeddings(
@@ -41,7 +42,7 @@ def process_embeddings(
     tmp_dir,
     final_dir,
     batch_size=32,
-    concurrency=192,
+    concurrency=128,
     max_retries=3
 ):
     """
@@ -92,8 +93,26 @@ def process_embeddings(
                     queue.task_done()
                     return
 
-                ids = [doc['_id'] for doc in batch_docs]
-                texts_to_embed = [clean_tweet_text(doc.get('text', '')) for doc in batch_docs]
+                # Clean and filter out empty tweets
+                valid_docs = []
+                for doc in batch_docs:
+                    cleaned_text = clean_tweet_text(doc.get('text', ''))
+                    if cleaned_text:
+                        valid_docs.append({'_id': doc['_id'], 'text': cleaned_text})
+
+                if not valid_docs:
+                    logging.info(f"Skipping batch starting with {batch_docs[0]['_id']} as it contains only empty texts.")
+                    # Mark original batch as processed to avoid getting stuck
+                    operations = [UpdateOne({"_id": doc['_id']}, {"$set": {"gemma_embedded_768": True}}) for doc in batch_docs]
+                    try:
+                        collection.bulk_write(operations, ordered=False)
+                    except Exception as e:
+                        logging.error(f"MongoDB update failed for empty batch: {e}")
+                    queue.task_done()
+                    continue
+
+                ids = [doc['_id'] for doc in valid_docs]
+                texts_to_embed = [doc['text'] for doc in valid_docs]
 
                 embeddings = []
                 for i in range(max_retries):
@@ -183,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument("--tmp-dir", type=str, default="/mnt/raid1/embeddings/tmp", help="Temporary directory for Parquet files.")
     parser.add_argument("--final-dir", type=str, default="/mnt/sdb_mount_point/embeddings/shards", help="Final directory for Parquet files.")
     parser.add_argument("--batch-size", type=int, default=32, help="Number of documents to process in a batch.")
-    parser.add_argument("--concurrency", type=int, default=192, help="Number of concurrent requests.")
+    parser.add_argument("--concurrency", type=int, default=128, help="Number of concurrent requests.")
 
     args = parser.parse_args()
     

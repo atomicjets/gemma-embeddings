@@ -14,7 +14,7 @@
                 "--batch-size",
                 "32",
                 "--concurrency",
-                "192"
+                "128"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
