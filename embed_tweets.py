@@ -132,8 +132,8 @@ def process_embeddings(
 
                 operations = [UpdateOne({"_id": doc_id}, {"$set": {"gemma_embedded_768": True}}) for doc_id in ids]
                 try:
-                    collection.bulk_write(operations, ordered=False)
-                    total_docs_processed += len(ids)
+                    result = collection.bulk_write(operations, ordered=False)
+                    total_docs_processed += result.modified_count
                 except Exception as e:
                     logging.error(f"MongoDB update failed: {e}")
 

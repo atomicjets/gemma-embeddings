@@ -69,6 +69,45 @@ python consolidate_embeddings.py
 
 This will read from the `shards` directory and write new, larger files to the `consolidated` directory.
 
+## 5. Real-World Performance
+
+The following logs were captured from a live run of the high-performance, concurrent `embed_tweets.py` script. The system achieved a stable throughput of approximately **2,600 docs/second**.
+
+```
+2025-10-27 16:21:27,172 - INFO - Inst. speed: 2132.59 docs/s | Avg speed: 2132.59 docs/s | Total processed: 12832
+2025-10-27 16:21:32,175 - INFO - Inst. speed: 3076.42 docs/s | Avg speed: 2561.09 docs/s | Total processed: 28224
+2025-10-27 16:21:37,176 - INFO - Inst. speed: 2636.27 docs/s | Avg speed: 2584.56 docs/s | Total processed: 41408
+2025-10-27 16:21:42,200 - INFO - Inst. speed: 2656.37 docs/s | Avg speed: 2601.70 docs/s | Total processed: 54752
+2025-10-27 16:21:47,264 - INFO - Inst. speed: 2799.24 docs/s | Avg speed: 2640.02 docs/s | Total processed: 68928
+2025-10-27 16:21:52,264 - INFO - Inst. speed: 2617.48 docs/s | Avg speed: 2636.39 docs/s | Total processed: 82016
+2025-10-27 16:21:57,264 - INFO - Inst. speed: 2803.13 docs/s | Avg speed: 2659.48 docs/s | Total processed: 96032
+2025-10-27 16:22:02,285 - INFO - Inst. speed: 2575.14 docs/s | Avg speed: 2649.19 docs/s | Total processed: 108960
+2025-10-27 16:22:07,314 - INFO - Inst. speed: 2704.05 docs/s | Avg speed: 2655.17 docs/s | Total processed: 122560
+2025-10-27 16:22:12,342 - INFO - Inst. speed: 2463.24 docs/s | Avg speed: 2636.32 docs/s | Total processed: 134944
+2025-10-27 16:22:17,342 - INFO - Inst. speed: 2489.34 docs/s | Avg speed: 2623.23 docs/s | Total processed: 147392
+2025-10-27 16:22:22,417 - INFO - Inst. speed: 2724.28 docs/s | Avg speed: 2631.60 docs/s | Total processed: 161216
+2025-10-27 16:22:27,454 - INFO - Inst. speed: 2686.98 docs/s | Avg speed: 2635.81 docs/s | Total processed: 174752
+2025-10-27 16:22:32,492 - INFO - Inst. speed: 2763.19 docs/s | Avg speed: 2644.81 docs/s | Total processed: 188672
+2025-10-27 16:22:37,494 - INFO - Inst. speed: 2674.15 docs/s | Avg speed: 2646.73 docs/s | Total processed: 202048
+2025-10-27 16:22:42,495 - INFO - Inst. speed: 2553.09 docs/s | Avg speed: 2640.97 docs/s | Total processed: 214816
+2025-10-27 16:22:47,499 - INFO - Inst. speed: 2455.72 docs/s | Avg speed: 2630.24 docs/s | Total processed: 227104
+2025-10-27 16:22:52,625 - INFO - Inst. speed: 2502.92 docs/s | Avg speed: 2623.10 docs/s | Total processed: 239936
+2025-10-27 16:22:57,677 - INFO - Inst. speed: 2901.26 docs/s | Avg speed: 2637.66 docs/s | Total processed: 254592
+2025-10-27 16:23:02,683 - INFO - Inst. speed: 2294.77 docs/s | Avg speed: 2620.75 docs/s | Total processed: 266080
+2025-10-27 16:23:07,909 - INFO - Inst. speed: 2179.80 docs/s | Avg speed: 2599.16 docs/s | Total processed: 277472
+2025-10-27 16:23:12,919 - INFO - Inst. speed: 2932.16 docs/s | Avg speed: 2614.09 docs/s | Total processed: 292160
+2025-10-27 16:23:17,978 - INFO - Inst. speed: 2182.01 docs/s | Avg speed: 2595.38 docs/s | Total processed: 303200
+2025-10-27 16:23:23,025 - INFO - Inst. speed: 2903.77 docs/s | Avg speed: 2608.15 docs/s | Total processed: 317856
+2025-10-27 16:23:28,033 - INFO - Inst. speed: 2658.50 docs/s | Avg speed: 2610.14 docs/s | Total processed: 331168
+2025-10-27 16:23:33,034 - INFO - Inst. speed: 2143.61 docs/s | Avg speed: 2592.44 docs/s | Total processed: 341888
+2025-10-27 16:23:38,037 - INFO - Inst. speed: 2437.00 docs/s | Avg speed: 2586.76 docs/s | Total processed: 354080
+2025-10-27 16:23:43,116 - INFO - Inst. speed: 2513.72 docs/s | Avg speed: 2584.15 docs/s | Total processed: 366848
+2025-10-27 16:23:48,127 - INFO - Inst. speed: 2688.47 docs/s | Avg speed: 2587.71 docs/s | Total processed: 380320
+2025-10-27 16:23:53,127 - INFO - Inst. speed: 2559.86 docs/s | Avg speed: 2586.79 docs/s | Total processed: 393120
+2025-10-27 16:23:58,150 - INFO - Inst. speed: 2204.39 docs/s | Avg speed: 2574.56 docs/s | Total processed: 404192
+2025-10-27 16:24:03,166 - INFO - Inst. speed: 2500.89 docs/s | Avg speed: 2572.28 docs/s | Total processed: 416736
+```
+
 ---
 
 # GPU Embedding Benchmark
