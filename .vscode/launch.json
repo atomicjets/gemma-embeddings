@@ -7,14 +7,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/embed_tweets.py",
             "args": [
-                "--collection",
-                "tweets",
+                "--input-file",
+                "/mnt/raid1/exports/tweets_to_process_uk.json",
                 "--tei-urls",
-                "http://localhost:18080/embed,http://localhost:18081/embed,http://localhost:18082/embed,http://localhost:18083/embed",
-                "--batch-size",
-                "32",
-                "--concurrency",
-                "128"
+                "http://127.0.0.1:18090/embed"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
