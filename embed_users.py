@@ -103,7 +103,7 @@ async def process_embeddings_from_file(
             try:
                 processed_embeddings = [emb[0] if isinstance(emb, list) and len(emb) == 1 and isinstance(emb[0], list) else emb for emb in embeddings]
                 arrow_table = pa.Table.from_pydict({
-                    'id': pa.array(ids, type=pa.string()),
+                    '_id': pa.array(ids, type=pa.string()),
                     'embedding': pa.array(processed_embeddings, type=pa.list_(pa.float32()))
                 })
                 part_filename = f"part-{ids[0]}-{ids[-1]}.parquet"

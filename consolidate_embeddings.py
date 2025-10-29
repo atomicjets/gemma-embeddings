@@ -4,18 +4,47 @@ import logging
 import pyarrow.parquet as pq
 import pyarrow as pa
 from glob import glob
+from multiprocessing import Pool, cpu_count
 
 # --- Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def process_chunk(args):
+    """Processes a single chunk of files."""
+    chunk_num, file_chunk, output_dir = args
+    if not file_chunk:
+        return None
+
+    logging.info(f"Processing chunk {chunk_num + 1}: {len(file_chunk)} files...")
+    try:
+        tables = [pq.read_table(f) for f in file_chunk]
+        if not tables:
+            return None
+
+        consolidated_table = pa.concat_tables(tables)
+        output_filename = f"consolidated-part-{chunk_num:05d}.parquet"
+        output_path = os.path.join(output_dir, output_filename)
+
+        pq.write_table(
+            consolidated_table,
+            output_path,
+            row_group_size=65536,
+            compression='zstd'
+        )
+        logging.info(f"Successfully wrote consolidated file: {output_path}")
+        return output_path
+    except Exception as e:
+        logging.error(f"Failed to process chunk {chunk_num + 1}: {e}")
+        return None
 
 def consolidate_files(
     source_dir,
     output_dir,
     files_per_chunk=10000,
-    target_file_size_mb=1024
+    num_workers=None
 ):
     """
-    Consolidates small Parquet files into larger ones.
+    Consolidates small Parquet files into larger ones using multiprocessing.
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -28,40 +57,21 @@ def consolidate_files(
 
     logging.info(f"Found {len(all_files)} files to consolidate.")
 
-    output_chunk_num = 0
-    for i in range(0, len(all_files), files_per_chunk):
-        file_chunk = all_files[i:i + files_per_chunk]
-        
-        if not file_chunk:
-            continue
+    chunks = [
+        (i, all_files[i*files_per_chunk:(i+1)*files_per_chunk], output_dir)
+        for i in range((len(all_files) + files_per_chunk - 1) // files_per_chunk)
+    ]
 
-        logging.info(f"Processing chunk {output_chunk_num + 1}: {len(file_chunk)} files...")
+    if not num_workers:
+        num_workers = cpu_count()
+    
+    logging.info(f"Starting consolidation with {num_workers} worker processes.")
 
-        try:
-            tables = [pq.read_table(f) for f in file_chunk]
-            if not tables:
-                continue
+    with Pool(processes=num_workers) as pool:
+        results = pool.map(process_chunk, chunks)
 
-            consolidated_table = pa.concat_tables(tables)
-
-            output_filename = f"consolidated-part-{output_chunk_num:05d}.parquet"
-            output_path = os.path.join(output_dir, output_filename)
-
-            pq.write_table(
-                consolidated_table,
-                output_path,
-                row_group_size=65536, # Good default for large files
-                compression='zstd'
-            )
-            logging.info(f"Successfully wrote consolidated file: {output_path}")
-            output_chunk_num += 1
-
-        except Exception as e:
-            logging.error(f"Failed to process a chunk of files: {e}")
-            # Continue to the next chunk
-            continue
-
-    logging.info("Consolidation process complete.")
+    successful_files = [r for r in results if r]
+    logging.info(f"Consolidation process complete. {len(successful_files)} files created.")
 
 
 if __name__ == "__main__":
@@ -84,11 +94,18 @@ if __name__ == "__main__":
         default=10000,
         help="Number of small files to process in each consolidation chunk."
     )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="Number of worker processes to use. Defaults to the number of CPU cores."
+    )
 
     args = parser.parse_args()
 
     consolidate_files(
         source_dir=args.source_dir,
         output_dir=args.output_dir,
-        files_per_chunk=args.chunk_size
+        files_per_chunk=args.chunk_size,
+        num_workers=args.num_workers
     )
