@@ -117,10 +117,8 @@ async def process_embeddings_from_file(
                     'embedding': pa.array(processed_embeddings, type=pa.list_(pa.float32()))
                 })
                 part_filename = f"part-{ids[0]}-{ids[-1]}.parquet"
-                tmp_path = os.path.join(tmp_dir, part_filename)
                 final_path = os.path.join(final_dir, part_filename)
-                pq.write_table(arrow_table, tmp_path, compression='zstd')
-                shutil.move(tmp_path, final_path)
+                pq.write_table(arrow_table, final_path, compression='zstd')
                 total_docs_processed += len(ids)
             except Exception as e:
                 logging.error(f"Failed to write/move Parquet for batch starting with {ids[0]}: {e}")
@@ -183,23 +181,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tweet embeddings from a file.")
     parser.add_argument("--input-file", type=str, required=True, help="Path to the line-delimited JSON input file.")
     parser.add_argument("--tei-urls", type=str, required=True, help="Comma-separated TEI endpoint URLs.")
-    parser.add_argument("--tmp-dir", type=str, default="/mnt/raid1/embeddings/tmp", help="Temporary directory for Parquet files.")
-    parser.add_argument("--final-dir", type=str, default="/mnt/sdb_mount_point/embeddings/shards", help="Final directory for Parquet files.")
+    parser.add_argument("--final-dir", type=str, default="/mnt/sda_mount_point/embeddings/shards", help="Final directory for Parquet files.")
     parser.add_argument("--progress-dir", type=str, default="/mnt/raid1/embeddings/progress", help="Directory to store progress markers.")
-    parser.add_argument("--batch-size", type=int, default=32, help="Number of documents to process in a batch.")
-    parser.add_argument("--concurrency", type=int, default=128, help="Number of concurrent requests.")
+    parser.add_argument("--batch-size", type=int, default=256, help="Number of documents to process in a batch.")
+    parser.add_argument("--concurrency", type=int, default=96, help="Number of concurrent requests.")
 
     args = parser.parse_args()
     
     if not os.path.exists(args.progress_dir):
         os.makedirs(args.progress_dir)
+    if not os.path.exists(args.final_dir):
+        os.makedirs(args.final_dir)
 
     tei_endpoints = [url.strip() for url in args.tei_urls.split(',')]
 
     asyncio.run(process_embeddings_from_file(
         input_file=args.input_file,
         tei_urls=tei_endpoints,
-        tmp_dir=args.tmp_dir,
+        tmp_dir=None,
         final_dir=args.final_dir,
         progress_dir=args.progress_dir,
         batch_size=args.batch_size,

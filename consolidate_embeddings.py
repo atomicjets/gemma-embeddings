@@ -38,22 +38,29 @@ def process_chunk(args):
         return None
 
 def consolidate_files(
-    source_dir,
+    source_dirs,
     output_dir,
     files_per_chunk=10000,
     num_workers=None
 ):
     """
-    Consolidates small Parquet files into larger ones using multiprocessing.
+    Consolidates small Parquet files from multiple source directories into larger ones using multiprocessing.
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         logging.info(f"Created output directory: {output_dir}")
 
-    all_files = sorted(glob(os.path.join(source_dir, '*.parquet')))
+    all_files = []
+    for source_dir in source_dirs:
+        files = glob(os.path.join(source_dir, '*.parquet'))
+        logging.info(f"Found {len(files)} files in {source_dir}.")
+        all_files.extend(files)
+    
     if not all_files:
-        logging.warning(f"No Parquet files found in {source_dir}. Exiting.")
+        logging.warning(f"No Parquet files found in any source directories. Exiting.")
         return
+    
+    all_files.sort()
 
     logging.info(f"Found {len(all_files)} files to consolidate.")
 
@@ -75,12 +82,13 @@ def consolidate_files(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Consolidate small Parquet files.")
+    parser = argparse.ArgumentParser(description="Consolidate small Parquet files from one or more source directories.")
     parser.add_argument(
-        "--source-dir",
+        "--source-dirs",
         type=str,
-        default="/mnt/sdb_mount_point/embeddings/shards",
-        help="Directory containing the small Parquet files."
+        nargs='+',
+        required=True,
+        help="One or more source directories containing the small Parquet files."
     )
     parser.add_argument(
         "--output-dir",
@@ -104,7 +112,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     consolidate_files(
-        source_dir=args.source_dir,
+        source_dirs=args.source_dirs,
         output_dir=args.output_dir,
         files_per_chunk=args.chunk_size,
         num_workers=args.num_workers
