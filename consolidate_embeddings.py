@@ -15,6 +15,13 @@ def process_chunk(args):
     if not file_chunk:
         return None
 
+    output_filename = f"consolidated-part-{chunk_num:05d}.parquet"
+    output_path = os.path.join(output_dir, output_filename)
+
+    if os.path.exists(output_path):
+        logging.info(f"Skipping chunk {chunk_num + 1} as output file already exists: {output_path}")
+        return output_path
+
     logging.info(f"Processing chunk {chunk_num + 1}: {len(file_chunk)} files...")
     try:
         tables = [pq.read_table(f) for f in file_chunk]
@@ -22,8 +29,6 @@ def process_chunk(args):
             return None
 
         consolidated_table = pa.concat_tables(tables)
-        output_filename = f"consolidated-part-{chunk_num:05d}.parquet"
-        output_path = os.path.join(output_dir, output_filename)
 
         pq.write_table(
             consolidated_table,
