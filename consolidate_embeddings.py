@@ -24,18 +24,20 @@ def process_chunk(args):
 
     logging.info(f"Processing chunk {chunk_num + 1}: {len(file_chunk)} files...")
     try:
-        tables = [pq.read_table(f) for f in file_chunk]
-        if not tables:
+        # Get the schema from the first file
+        if not file_chunk:
             return None
+        
+        schema = pq.read_schema(file_chunk[0])
+        
+        with pq.ParquetWriter(output_path, schema, compression='zstd') as writer:
+            for f in file_chunk:
+                try:
+                    table = pq.read_table(f)
+                    writer.write_table(table)
+                except Exception as read_error:
+                    logging.warning(f"Could not read file {f}, skipping: {read_error}")
 
-        consolidated_table = pa.concat_tables(tables)
-
-        pq.write_table(
-            consolidated_table,
-            output_path,
-            row_group_size=65536,
-            compression='zstd'
-        )
         logging.info(f"Successfully wrote consolidated file: {output_path}")
         return output_path
     except Exception as e:
